@@ -9,15 +9,39 @@ import { GameProvider } from '../contexts/GameContext';
 const Index = () => {
   return (
     <GameProvider>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 overflow-hidden relative">
+        {/* Animated background stars */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-yellow-200 rounded-full animate-pulse"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${2 + Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
+
         <div className="relative h-screen flex">
           {/* Main Game Area */}
           <div className="flex-1 flex flex-col">
-            <header className="bg-black/20 backdrop-blur-sm border-b border-white/10 p-4">
+            <header className="bg-black/40 backdrop-blur-md border-b border-yellow-500/30 p-4 shadow-2xl">
               <div className="flex items-center justify-between">
-                <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
-                  ⭐ Corrida das Estrelinhas
-                </h1>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-2xl">⭐</span>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-transparent bg-gradient-to-r from-yellow-300 to-yellow-500 bg-clip-text">
+                      Corrida das Estrelinhas
+                    </h1>
+                    <p className="text-sm text-yellow-200/80">Colete estrelas antes que acabem!</p>
+                  </div>
+                </div>
                 <GameControls />
               </div>
             </header>
@@ -28,7 +52,7 @@ const Index = () => {
               </div>
               
               {/* Right Sidebar */}
-              <div className="w-80 bg-black/30 backdrop-blur-sm border-l border-white/10 flex flex-col">
+              <div className="w-80 bg-black/40 backdrop-blur-md border-l border-yellow-500/30 flex flex-col shadow-2xl">
                 <PlayerStats />
                 <ChatSystem />
               </div>
