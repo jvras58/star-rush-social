@@ -3,6 +3,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import pixel font */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
 @layer base {
@@ -103,23 +106,31 @@
   }
 }
 
+/* Pixel art font */
+.pixel-font {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
 /* Custom scrollbar for better visual consistency */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
+  background: rgba(146, 64, 14, 0.3);
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 215, 0, 0.5);
-  border-radius: 3px;
+  background: rgba(245, 158, 11, 0.7);
+  border-radius: 4px;
+  border: 1px solid rgba(146, 64, 14, 0.5);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 215, 0, 0.7);
+  background: rgba(245, 158, 11, 0.9);
 }
 
 /* Game-specific animations */
@@ -130,4 +141,24 @@
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+/* Pixel perfect rendering */
+.pixel-perfect {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Retro game styling */
+.retro-border {
+  border-style: solid;
+  border-image: linear-gradient(45deg, #92400e, #f59e0b, #92400e) 1;
+}
+
+.retro-shadow {
+  box-shadow: 
+    4px 4px 0px rgba(146, 64, 14, 0.8),
+    8px 8px 0px rgba(146, 64, 14, 0.4);
 }
