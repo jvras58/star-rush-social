@@ -12,15 +12,13 @@ const GameBoard = () => {
 
   if (gameStatus === 'waiting') {
     return (
-      <div className="h-full flex items-center justify-center relative overflow-hidden" 
-           style={{
-             backgroundImage: `url('/lovable-uploads/7ad9ed14-5ed6-4cd0-b755-66a02a018f29.png')`,
-             backgroundSize: '64px 64px',
-             backgroundRepeat: 'repeat',
-             imageRendering: 'pixelated'
-           }}>
-        {/* Overlay para escurecer o fundo */}
-        <div className="absolute inset-0 bg-black/60"></div>
+      <div className="h-full flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
+        {/* Subtle pixel pattern overlay */}
+        <div className="absolute inset-0 opacity-10"
+             style={{
+               backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.3'%3E%3Crect width='2' height='2'/%3E%3C/g%3E%3C/svg%3E")`,
+               imageRendering: 'pixelated'
+             }}></div>
         
         {/* Animated background elements */}
         <div className="absolute inset-0">
@@ -66,19 +64,13 @@ const GameBoard = () => {
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden"
-         style={{
-           backgroundImage: `url('/lovable-uploads/7ad9ed14-5ed6-4cd0-b755-66a02a018f29.png')`,
-           backgroundSize: '128px 128px',
-           backgroundRepeat: 'repeat',
-           imageRendering: 'pixelated'
-         }}>
+    <div className="relative w-full h-full overflow-hidden bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900">
       
-      {/* Overlay pattern for depth */}
+      {/* Subtle texture overlay using one of your assets */}
       <div className="absolute inset-0 opacity-20"
            style={{
              backgroundImage: `url('/lovable-uploads/048b82c5-ca9b-48d9-b91e-9ce7ea80f22e.png')`,
-             backgroundSize: '32px 32px',
+             backgroundSize: '64px 64px',
              backgroundRepeat: 'repeat',
              imageRendering: 'pixelated'
            }}></div>
