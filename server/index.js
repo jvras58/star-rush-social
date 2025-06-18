@@ -198,6 +198,22 @@ io.on('connection', socket => {
         break;
     }
     p.zone = getPlayerZone(p.x, p.y);
+
+    const collected = [];
+    stars = stars.filter(star => {
+      const dist = Math.hypot(p.x - star.x, p.y - star.y);
+      if (dist <= 30) {
+        p.score += 1;
+        collected.push(star.id);
+        return false;
+      }
+      return true;
+    });
+
+    if (collected.length) {
+      console.log(`Player ${p.name} collected ${collected.length} star(s)`);
+    }
+
     broadcastState(io);
   });
 
