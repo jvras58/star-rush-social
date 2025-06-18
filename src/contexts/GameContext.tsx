@@ -1,5 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import socket from '../lib/socket';
 
 export interface Player {
   id: string;
@@ -151,92 +151,55 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const joinGame = useCallback((playerName: string) => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
-    const newPlayer: Player = {
-      id: Date.now().toString(),
-      name: playerName,
-      x: 300,
-      y: 300,
-      score: 0,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      zone: getPlayerZone(300, 300),
-      isOnline: true
-    };
-
-    setCurrentPlayer(newPlayer);
-    setPlayers(prev => [...prev, newPlayer]);
+    socket.emit('player:join', playerName);
   }, []);
 
   const movePlayer = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-    if (!currentPlayer || gameStatus !== 'playing') return;
-
-    const moveDistance = 10;
-    let newX = currentPlayer.x;
-    let newY = currentPlayer.y;
-
-    switch (direction) {
-      case 'up':
-        newY = Math.max(0, currentPlayer.y - moveDistance);
-        break;
-      case 'down':
-        newY = Math.min(600, currentPlayer.y + moveDistance);
-        break;
-      case 'left':
-        newX = Math.max(0, currentPlayer.x - moveDistance);
-        break;
-      case 'right':
-        newX = Math.min(800, currentPlayer.x + moveDistance);
-        break;
-    }
-
-    const newZone = getPlayerZone(newX, newY);
-    const updatedPlayer = { ...currentPlayer, x: newX, y: newY, zone: newZone };
-
-    setCurrentPlayer(updatedPlayer);
-    setPlayers(prev => prev.map(p => p.id === currentPlayer.id ? updatedPlayer : p));
-  }, [currentPlayer, gameStatus]);
-
-  const collectStar = useCallback((starId: string) => {
-    if (!currentPlayer) return;
-
-    const star = stars.find(s => s.id === starId);
-    if (!star) return;
-
-    const distance = Math.sqrt(
-      Math.pow(currentPlayer.x - star.x, 2) + Math.pow(currentPlayer.y - star.y, 2)
-    );
-
-    if (distance <= 30) {
-      setStars(prev => prev.filter(s => s.id !== starId));
-      const updatedPlayer = { ...currentPlayer, score: currentPlayer.score + 1 };
-      setCurrentPlayer(updatedPlayer);
-      setPlayers(prev => prev.map(p => p.id === currentPlayer.id ? updatedPlayer : p));
-    }
-  }, [currentPlayer, stars]);
-
-  const sendMessage = useCallback((message: string, type: 'global' | 'zone') => {
-    if (!currentPlayer) return;
-
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      playerId: currentPlayer.id,
-      playerName: currentPlayer.name,
-      message,
-      timestamp: Date.now(),
-      type
-    };
-
-    setChatMessages(prev => [...prev, newMessage].slice(-50)); // Keep last 50 messages
-  }, [currentPlayer]);
-
-  const startGame = useCallback(() => {
-    setGameStatus('playing');
-    setGameTime(300);
+    socket.emit('player:move', direction);
   }, []);
 
-  // Game loop - spawn stars and update game state
+  const collectStar = useCallback((starId: string) => {
+    socket.emit('star:collect', starId);
+  }, []);
+
+  const sendMessage = useCallback((message: string, type: 'global' | 'zone') => {
+    socket.emit('chat:message', { message, type });
+  }, []);
+
+  const startGame = useCallback(() => {
+    socket.emit('game:start');
+  }, []);
+
+  useEffect(() => {
+    if (socket.connected) return;
+    socket.connect();
+
+    socket.on('state', ({ players, stars, gameTime, gameStatus }) => {
+      setPlayers(players);
+      setStars(stars);
+      setGameTime(gameTime);
+      setGameStatus(gameStatus);
+    });
+
+    socket.on('chat:message', (msg: ChatMessage) => {
+      setChatMessages(prev => [...prev, msg].slice(-50));
+    });
+
+    socket.on('player:self', (player: Player) => {
+      setCurrentPlayer(player);
+    });
+
+    return () => {
+      socket.off('state');
+      socket.off('chat:message');
+      socket.off('player:self');
+      socket.disconnect();
+    };
+  }, []);
+
   useEffect(() => {
     if (gameStatus !== 'playing') return;
+    if (socket.connected) return;
 
     const interval = setInterval(() => {
       // Update player counts in zones
@@ -285,7 +248,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [gameStatus, players]);
 
-  // Keyboard controls
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (gameStatus !== 'playing') return;
