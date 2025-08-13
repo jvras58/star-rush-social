@@ -1,56 +1,34 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import socket from '../lib/socket';
-
-export interface Player {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  score: number;
-  color: string;
-  zone: string;
-  isOnline: boolean;
-}
-
-export interface Star {
-  id: string;
-  x: number;
-  y: number;
-  zone: string;
-  createdAt: number;
-  lifetime: number;
-}
-
-export interface Zone {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  type: 'public' | 'private';
-  playerCount: number;
-  starSpawnRate: number;
-  color: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  playerId: string;
-  playerName: string;
-  message: string;
-  timestamp: number;
-  type: 'global' | 'zone' | 'private';
-}
+import { 
+  Player, 
+  Star, 
+  Area, 
+  ChatMessage, 
+  GameMap, 
+  GameRound, 
+  GameEvent, 
+  GameState 
+} from '../types/game';
+import { loadMapFromFile, getDefaultMap } from '../utils/mapLoader';
+import { 
+  generateRoundEvents, 
+  calculateSpawnRateModifier, 
+  calculateLifetimeModifier,
+  calculateSpeedModifier 
+} from '../utils/gameEvents';
 
 interface GameContextType {
   players: Player[];
   stars: Star[];
-  zones: Zone[];
+  areas: Area[];
   chatMessages: ChatMessage[];
   currentPlayer: Player | null;
-  gameTime: number;
+  currentRound: GameRound | null;
+  totalRounds: number;
   gameStatus: 'waiting' | 'playing' | 'ended';
+  activeEvents: GameEvent[];
+  currentMap: GameMap;
   movePlayer: (direction: 'up' | 'down' | 'left' | 'right') => void;
   collectStar: (starId: string) => void;
   sendMessage: (message: string, type: 'global' | 'zone') => void;
@@ -73,81 +51,45 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [stars, setStars] = useState<Star[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
-  const [gameTime, setGameTime] = useState(300); // 5 minutes
+  const [currentRound, setCurrentRound] = useState<GameRound | null>(null);
+  const [totalRounds] = useState(6); // 6 rounds total
   const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'ended'>('waiting');
-
-  // Define game zones
-  const zones: Zone[] = [
-    {
-      id: 'central-plaza',
-      name: 'Praça Central',
-      x: 200,
-      y: 200,
-      width: 200,
-      height: 200,
-      type: 'public',
-      playerCount: 0,
-      starSpawnRate: 5,
-      color: 'rgba(255, 215, 0, 0.3)'
-    },
-    {
-      id: 'north-gardens',
-      name: 'Jardins do Norte',
-      x: 100,
-      y: 50,
-      width: 150,
-      height: 120,
-      type: 'public',
-      playerCount: 0,
-      starSpawnRate: 3,
-      color: 'rgba(0, 255, 127, 0.3)'
-    },
-    {
-      id: 'east-caverns',
-      name: 'Cavernas do Leste',
-      x: 450,
-      y: 150,
-      width: 120,
-      height: 180,
-      type: 'private',
-      playerCount: 0,
-      starSpawnRate: 2,
-      color: 'rgba(138, 43, 226, 0.3)'
-    },
-    {
-      id: 'south-fields',
-      name: 'Campos do Sul',
-      x: 150,
-      y: 450,
-      width: 180,
-      height: 100,
-      type: 'public',
-      playerCount: 0,
-      starSpawnRate: 4,
-      color: 'rgba(255, 69, 0, 0.3)'
-    },
-    {
-      id: 'west-woods',
-      name: 'Bosque Oeste',
-      x: 50,
-      y: 250,
-      width: 120,
-      height: 150,
-      type: 'private',
-      playerCount: 0,
-      starSpawnRate: 2,
-      color: 'rgba(34, 139, 34, 0.3)'
-    }
-  ];
+  const [activeEvents, setActiveEvents] = useState<GameEvent[]>([]);
+  const [currentMap, setCurrentMap] = useState<GameMap>(getDefaultMap());
 
   const getPlayerZone = (x: number, y: number): string => {
-    for (const zone of zones) {
-      if (x >= zone.x && x <= zone.x + zone.width && 
-          y >= zone.y && y <= zone.y + zone.height) {
-        return zone.id;
+    for (const area of currentMap.areas) {
+      if (x >= area.x && x <= area.x + area.width && 
+          y >= area.y && y <= area.y + area.height) {
+        return area.id;
       }
     }
     return 'wilderness';
+  };
+
+  const startNewRound = (roundNumber: number) => {
+    const events = generateRoundEvents(roundNumber);
+    const newRound: GameRound = {
+      number: roundNumber,
+      duration: 300, // 5 minutes per round
+      events,
+      startTime: Date.now()
+    };
+    setCurrentRound(newRound);
+    setActiveEvents([]);
+    
+    // Schedule events to start at random times during the round
+    events.forEach((event, index) => {
+      const delay = Math.random() * 150000; // 0-2.5 minutes delay
+      setTimeout(() => {
+        setActiveEvents(prev => [...prev, event]);
+        
+        // Remove event after its duration
+        setTimeout(() => {
+          setActiveEvents(prev => prev.filter(e => e.id !== event.id));
+        }, event.duration * 1000);
+      }, delay);
+    });
   };
 
   const joinGame = useCallback((playerName: string) => {
@@ -167,18 +109,36 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const startGame = useCallback(() => {
+    startNewRound(1);
+    setGameStatus('playing');
     socket.emit('game:start');
+  }, []);
+
+  // Load map on component mount
+  useEffect(() => {
+    const loadMap = async () => {
+      try {
+        const map = await loadMapFromFile('/maps/default.xml');
+        setCurrentMap(map);
+      } catch (error) {
+        console.error('Failed to load map, using default:', error);
+        setCurrentMap(getDefaultMap());
+      }
+    };
+    loadMap();
   }, []);
 
   useEffect(() => {
     if (socket.connected) return;
     socket.connect();
 
-    socket.on('state', ({ players, stars, gameTime, gameStatus }) => {
+    socket.on('state', ({ players, stars, gameStatus, currentRound }) => {
       setPlayers(players);
       setStars(stars);
-      setGameTime(gameTime);
       setGameStatus(gameStatus);
+      if (currentRound) {
+        setCurrentRound(currentRound);
+      }
     });
 
     socket.on('chat:message', (msg: ChatMessage) => {
@@ -198,32 +158,44 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    if (gameStatus !== 'playing') return;
-    if (socket.connected) return;
+    if (gameStatus !== 'playing' || !currentRound) return;
 
     const interval = setInterval(() => {
-      // Update player counts in zones
-      const updatedZones = zones.map(zone => ({
-        ...zone,
-        playerCount: players.filter(p => p.zone === zone.id).length
+      // Update player counts in areas
+      const updatedAreas = currentMap.areas.map(area => ({
+        ...area,
+        playerCount: players.filter(p => p.zone === area.id).length
+      }));
+
+      // Update current map with player counts
+      setCurrentMap(prev => ({
+        ...prev,
+        areas: updatedAreas
       }));
 
       // Spawn new stars
       setStars(prev => {
         const newStars = [...prev];
         
-        updatedZones.forEach(zone => {
-          const shouldSpawn = Math.random() < (zone.starSpawnRate / 100);
-          const decayRate = Math.max(0.1, 1 - (zone.playerCount * 0.2));
+        updatedAreas.forEach(area => {
+          const spawnRateModifier = calculateSpawnRateModifier(area.type, activeEvents);
+          const adjustedSpawnRate = area.starSpawnRate * spawnRateModifier;
+          const shouldSpawn = Math.random() < (adjustedSpawnRate / 100);
+          const decayRate = Math.max(0.1, 1 - (area.playerCount * 0.2));
           
           if (shouldSpawn && Math.random() < decayRate) {
+            const lifetimeModifier = calculateLifetimeModifier(area.type, activeEvents);
+            const baseLifetime = area.type === 'public' ? 12000 : 20000;
+            const adjustedLifetime = baseLifetime * lifetimeModifier - (area.playerCount * 1500);
+            
             const newStar: Star = {
               id: Date.now().toString() + Math.random(),
-              x: zone.x + Math.random() * zone.width,
-              y: zone.y + Math.random() * zone.height,
-              zone: zone.id,
+              x: area.x + Math.random() * area.width,
+              y: area.y + Math.random() * area.height,
+              zone: area.id,
+              type: area.type,
               createdAt: Date.now(),
-              lifetime: zone.type === 'public' ? 15000 - (zone.playerCount * 2000) : 25000
+              lifetime: Math.max(5000, adjustedLifetime)
             };
             newStars.push(newStar);
           }
@@ -235,18 +207,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       });
 
-      // Update game timer
-      setGameTime(prev => {
-        if (prev <= 1) {
-          setGameStatus('ended');
-          return 0;
+      // Update round timer
+      if (currentRound) {
+        const elapsed = Date.now() - currentRound.startTime;
+        const remaining = currentRound.duration * 1000 - elapsed;
+        
+        if (remaining <= 0) {
+          if (currentRound.number >= totalRounds) {
+            setGameStatus('ended');
+            setCurrentRound(null);
+          } else {
+            startNewRound(currentRound.number + 1);
+          }
         }
-        return prev - 1;
-      });
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameStatus, players]);
+  }, [gameStatus, currentRound, players, activeEvents, currentMap, totalRounds]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -280,11 +258,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <GameContext.Provider value={{
       players,
       stars,
-      zones,
+      areas: currentMap.areas,
       chatMessages,
       currentPlayer,
-      gameTime,
+      currentRound,
+      totalRounds,
       gameStatus,
+      activeEvents,
+      currentMap,
       movePlayer,
       collectStar,
       sendMessage,

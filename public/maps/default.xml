@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map id="default" name="Mapa das Estrelas" width="800" height="600">
+  <!-- Áreas Públicas (Estrelas Azuis) -->
+  <area 
+    id="central-plaza" 
+    name="Praça Central" 
+    x="300" 
+    y="250" 
+    width="200" 
+    height="200" 
+    type="public" 
+    starSpawnRate="6"
+    color="rgba(59, 130, 246, 0.3)" 
+  />
+  
+  <area 
+    id="north-gardens" 
+    name="Jardins do Norte" 
+    x="150" 
+    y="50" 
+    width="180" 
+    height="120" 
+    type="public" 
+    starSpawnRate="4"
+    color="rgba(59, 130, 246, 0.3)" 
+  />
+  
+  <area 
+    id="south-fields" 
+    name="Campos do Sul" 
+    x="200" 
+    y="480" 
+    width="300" 
+    height="100" 
+    type="public" 
+    starSpawnRate="5"
+    color="rgba(59, 130, 246, 0.3)" 
+  />
+  
+  <area 
+    id="west-plaza" 
+    name="Praça Oeste" 
+    x="50" 
+    y="200" 
+    width="120" 
+    height="120" 
+    type="public" 
+    starSpawnRate="4"
+    color="rgba(59, 130, 246, 0.3)" 
+  />
+  
+  <!-- Áreas Privadas (Estrelas Amarelas) -->
+  <area 
+    id="east-caverns" 
+    name="Cavernas do Leste" 
+    x="550" 
+    y="150" 
+    width="150" 
+    height="200" 
+    type="private" 
+    starSpawnRate="3"
+    color="rgba(168, 85, 247, 0.3)" 
+  />
+  
+  <area 
+    id="north-tower" 
+    name="Torre do Norte" 
+    x="400" 
+    y="50" 
+    width="100" 
+    height="120" 
+    type="private" 
+    starSpawnRate="2"
+    color="rgba(168, 85, 247, 0.3)" 
+  />
+  
+  <area 
+    id="secret-chamber" 
+    name="Câmara Secreta" 
+    x="580" 
+    y="450" 
+    width="120" 
+    height="100" 
+    type="private" 
+    starSpawnRate="3"
+    color="rgba(168, 85, 247, 0.3)" 
+  />
+</map>

@@ -4,7 +4,7 @@ import { useGame } from '../contexts/GameContext';
 import { Sparkles, Crown, Users } from 'lucide-react';
 
 const GameBoard = () => {
-  const { players, stars, zones, currentPlayer, collectStar, gameStatus } = useGame();
+  const { players, stars, areas, currentPlayer, collectStar, gameStatus, activeEvents, currentRound } = useGame();
 
   const handleStarClick = (starId: string) => {
     collectStar(starId);
@@ -75,40 +75,40 @@ const GameBoard = () => {
              imageRendering: 'pixelated'
            }}></div>
 
-      {/* Game zones with pixel art styling */}
-      {zones.map(zone => (
+      {/* Game areas with pixel art styling */}
+      {areas.map(area => (
         <div
-          key={zone.id}
+          key={area.id}
           className="absolute border-4 transition-all duration-300 hover:border-yellow-400"
           style={{
-            left: zone.x,
-            top: zone.y,
-            width: zone.width,
-            height: zone.height,
-            backgroundColor: zone.color + '40',
-            borderColor: zone.type === 'public' ? '#f59e0b' : '#a855f7',
+            left: area.x,
+            top: area.y,
+            width: area.width,
+            height: area.height,
+            backgroundColor: area.color + '40',
+            borderColor: area.type === 'public' ? '#3b82f6' : '#a855f7',
             borderStyle: 'dashed',
             imageRendering: 'pixelated',
-            boxShadow: zone.type === 'public' 
-              ? 'inset 0 0 20px rgba(245, 158, 11, 0.3)' 
+            boxShadow: area.type === 'public' 
+              ? 'inset 0 0 20px rgba(59, 130, 246, 0.3)' 
               : 'inset 0 0 20px rgba(168, 85, 247, 0.3)'
           }}
         >
           <div className="absolute -top-10 left-3 flex items-center gap-2">
-            <div className="bg-amber-900 border-2 border-amber-600 rounded px-2 py-1 pixel-font">
-              <span className="text-yellow-100 text-sm font-bold">{zone.name}</span>
+            <div className="bg-slate-800 border-2 border-slate-600 rounded px-2 py-1 pixel-font">
+              <span className="text-white text-sm font-bold">{area.name}</span>
               <div className="flex items-center gap-1 mt-1">
-                <Users size={12} className="text-yellow-200" />
-                <span className="text-xs text-yellow-200">{zone.playerCount}</span>
+                <Users size={12} className="text-slate-300" />
+                <span className="text-xs text-slate-300">{area.playerCount}</span>
               </div>
             </div>
           </div>
-          <div className="absolute top-3 right-3 bg-amber-900 border-2 border-amber-600 rounded px-2 py-1">
-            <span className="text-xs text-yellow-100 flex items-center gap-1 pixel-font">
-              {zone.type === 'public' ? (
+          <div className="absolute top-3 right-3 bg-slate-800 border-2 border-slate-600 rounded px-2 py-1">
+            <span className="text-xs text-white flex items-center gap-1 pixel-font">
+              {area.type === 'public' ? (
                 <>
-                  <Sparkles size={12} className="text-yellow-400" />
-                  <span className="text-yellow-300">Público</span>
+                  <Sparkles size={12} className="text-blue-400" />
+                  <span className="text-blue-300">Público</span>
                 </>
               ) : (
                 <>
@@ -121,7 +121,7 @@ const GameBoard = () => {
         </div>
       ))}
 
-      {/* Enhanced stars with pixel art style */}
+      {/* Enhanced stars with pixel art style and colors based on area type */}
       {stars.map(star => (
         <div
           key={star.id}
@@ -133,11 +133,20 @@ const GameBoard = () => {
           onClick={() => handleStarClick(star.id)}
         >
           <div className="relative">
-            <div className="w-8 h-8 text-4xl animate-pulse hover:animate-bounce transition-all duration-200 group-hover:drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]"
-                 style={{ imageRendering: 'pixelated' }}>
+            <div className={`w-8 h-8 text-4xl animate-pulse hover:animate-bounce transition-all duration-200 ${
+              star.type === 'public' 
+                ? 'group-hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]' 
+                : 'group-hover:drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]'
+            }`}
+                 style={{ 
+                   imageRendering: 'pixelated',
+                   filter: star.type === 'public' ? 'hue-rotate(240deg)' : 'none'
+                 }}>
               ⭐
             </div>
-            <div className="absolute inset-0 w-8 h-8 bg-yellow-300/30 rounded-full animate-ping"
+            <div className={`absolute inset-0 w-8 h-8 rounded-full animate-ping ${
+              star.type === 'public' ? 'bg-blue-400/30' : 'bg-yellow-300/30'
+            }`}
                  style={{ imageRendering: 'pixelated' }}></div>
           </div>
         </div>
@@ -198,25 +207,46 @@ const GameBoard = () => {
         </div>
       </div>
 
-      {/* Enhanced zone legend with pixel art styling */}
-      <div className="absolute top-6 right-6 bg-amber-900 border-4 border-amber-600 rounded-xl p-4 max-w-xs">
-        <div className="text-yellow-100 pixel-font">
-          <div className="flex items-center gap-2 font-semibold text-yellow-300 mb-3">
+      {/* Round info and events */}
+      <div className="absolute top-6 right-6 bg-slate-800 border-4 border-slate-600 rounded-xl p-4 max-w-xs">
+        <div className="text-white pixel-font">
+          <div className="flex items-center gap-2 font-semibold text-blue-300 mb-3">
             <Crown size={16} />
-            <span>Guia das Zonas</span>
+            <span>Informações da Rodada</span>
           </div>
-          <div className="space-y-2 text-sm">
+          {currentRound && (
+            <div className="space-y-2 text-sm mb-4">
+              <div className="text-center bg-slate-700 rounded px-2 py-1">
+                <span className="text-blue-300 font-bold">Rodada {currentRound.number}/{6}</span>
+              </div>
+              <div className="text-center">
+                <span className="text-slate-300">
+                  {Math.max(0, Math.ceil((currentRound.duration * 1000 - (Date.now() - currentRound.startTime)) / 1000))}s restantes
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {activeEvents.length > 0 && (
+            <div className="mb-4">
+              <div className="text-sm font-semibold text-orange-300 mb-2">Eventos Ativos:</div>
+              {activeEvents.map(event => (
+                <div key={event.id} className="text-xs bg-orange-900 rounded px-2 py-1 mb-1">
+                  <div className="text-orange-200 font-medium">{event.name}</div>
+                  <div className="text-orange-300">{event.description}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="space-y-2 text-sm border-t border-slate-600 pt-3">
             <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-yellow-400 flex-shrink-0" />
-              <span><strong className="text-yellow-300">Públicas:</strong> Mais estrelas, menos duração</span>
+              <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+              <span><strong className="text-blue-300">Estrelas Azuis:</strong> Áreas públicas</span>
             </div>
             <div className="flex items-center gap-2">
-              <Crown size={14} className="text-purple-400 flex-shrink-0" />
-              <span><strong className="text-purple-300">Privadas:</strong> Menos estrelas, mais duração</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users size={14} className="text-blue-400 flex-shrink-0" />
-              <span><strong className="text-blue-300">Números:</strong> jogadores na zona</span>
+              <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+              <span><strong className="text-yellow-300">Estrelas Amarelas:</strong> Áreas privadas</span>
             </div>
           </div>
         </div>

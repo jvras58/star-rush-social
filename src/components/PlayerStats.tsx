@@ -4,7 +4,7 @@ import { useGame } from '../contexts/GameContext';
 import { Trophy, Clock, Users, MapPin, Crown } from 'lucide-react';
 
 const PlayerStats = () => {
-  const { players, currentPlayer, gameTime, gameStatus } = useGame();
+  const { players, currentPlayer, currentRound, gameStatus } = useGame();
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -32,7 +32,12 @@ const PlayerStats = () => {
           <div className="bg-amber-800 border-2 border-amber-600 rounded px-3 py-2">
             <div className="flex items-center gap-2 text-yellow-300 font-mono text-sm pixel-font">
               <Clock size={16} />
-              <span>{formatTime(gameTime)}</span>
+              <span>
+                {currentRound 
+                  ? `R${currentRound.number}/6 - ${formatTime(Math.max(0, Math.ceil((currentRound.duration * 1000 - (Date.now() - currentRound.startTime)) / 1000)))}`
+                  : '⏳ Aguardando...'
+                }
+              </span>
             </div>
           </div>
         </div>
